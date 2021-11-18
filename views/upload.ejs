@@ -1,14 +1,50 @@
 
-  <div style="margin-top: 20%;">
+  <div>
     <form method="post" action="/uploaddata" enctype="multipart/form-data">
       
         <h1 style="text-align:center;">  Upload Your Files Here</h1>
         <a href="/dashboard" class="btn btn-success btn-lg"   > Go To Dashboard </a>
+        <div class="droparea">
+          <label for="formFile" class="form-label mt-4">Drag and Drop Your Files Here</label>
+        </div>
         <div class="form-group">
-          <label for="formFile" class="form-label mt-4">Select Your Files</label>
-          <input class="form-control" type="file" id="formFile" multiple>
+          <input class="form-control" type="file" id="formFile" name="img" multiple>
         </div>
         <input class="btn btn-primary btn-block" type="submit"  >
        
       </form>
   </div>
+  <script>
+    
+    const droparea = document.querySelector(".droparea");
+
+droparea.addEventListener("dragover", (e) => {
+  e.preventDefault();
+  droparea.classList.add("hover");
+});
+
+droparea.addEventListener("dragleave", () => {
+  droparea.classList.remove("hover");
+});
+
+droparea.addEventListener("drop", (e) => {
+  e.preventDefault();
+  
+  const image = e.dataTransfer.files[0];
+  // console.log("yest",image.type);
+  const type = image.type;
+
+  if (type == "image/png" ||type == "image/jpg" ||type == "image/jpeg" || type == "image/gif" || type == "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet") {
+    return upload(image);
+  } else {
+    droparea.setAttribute("class", "droparea invalid");
+    droparea.innerText = "Invalid File Format!";
+    return false;
+  }
+});
+
+const upload = (image) => {
+  droparea.setAttribute("class", "droparea valid");
+  droparea.innerText = "Added " + image.name;
+};
+  </script>
