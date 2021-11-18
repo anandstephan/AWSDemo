@@ -5,6 +5,11 @@ const User = require("../models/User");
 const passport = require("passport");
 var uploads3 = require("../middleware/awsupload");
 
+router.get("/test", (req, res) => {
+  console.log("test");
+  res.render("pdfviewer");
+});
+
 router.get("/", (req, res) => {
   res.render("welcome");
 });
