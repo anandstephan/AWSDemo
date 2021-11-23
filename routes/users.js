@@ -156,7 +156,7 @@ router.post("/register", (req, res) => {
           .save()
           .then((user) => {
             req.flash("success_msg", "You are now register and can log in");
-            res.redirect("/login");
+            res.redirect("/admin");
           })
           .catch((err) => console.log(err));
       });
@@ -220,7 +220,7 @@ router.get("/admin", (req, res) => {
   res.render("admindashboard");
 });
 
-router.get("/adduser", checkAuthenicated, (req, res) => {
+router.get("/adduser", (req, res) => {
   res.render("register");
 });
 
