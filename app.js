@@ -6,6 +6,8 @@ const session = require("express-session");
 const path = require("path");
 const flash = require("connect-flash");
 const passport = require("passport");
+const AWS = require("aws-sdk");
+const bodyParser = require("body-parser");
 const app = express();
 
 // Passport config
@@ -25,7 +27,8 @@ app.use(expressLayouts);
 app.set("view engine", "ejs");
 
 //Body Parser
-app.use(express.urlencoded({ extended: false }));
+app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
 
 //Express Session
 app.use(

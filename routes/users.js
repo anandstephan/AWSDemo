@@ -3,7 +3,49 @@ const router = express.Router();
 const bcrypt = require("bcryptjs");
 const User = require("../models/User");
 const passport = require("passport");
+const AWS = require("aws-sdk");
+const mongoose = require("mongoose");
+const Info = require("../models/Info");
 var uploads3 = require("../middleware/awsupload");
+
+router.get("/test2/:param", (req, res) => {
+  // console.log(req.params.param)
+  let bucketname = req.params.param;
+  // Set Amazon Uploading Engine
+  const s3 = new AWS.S3({
+    // accessKeyId: process.env.ACCESS_KEY_ID,
+    // secretAccessKey: process.env.SECRET_ACCESS_KEY,
+    accessKeyId: "AKIASPLFO6OWDBGJA2BS",
+    secretAccessKey: "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",
+    region: "ap-south-1",
+  });
+
+  async function test2() {
+    await s3
+      .listObjectsV2({
+        Bucket: bucketname,
+      })
+      .promise()
+      .then((data) => {
+        // console.log(data.Contents);
+        let result = [];
+        data.Contents.forEach(
+          (content) => content.Size == 0 && result.push(content.Key)
+        );
+        // console.log(result);
+        res.status(200).json(result);
+      });
+  }
+  test2();
+  // s3.listBuckets((err, data) => {
+  //   if (err) {
+  //     console.log("Error", err);
+  //   } else {
+  //     console.log("Success", data.Buckets);
+  //     res.render("upload", { buckets: data.Buckets });
+  //   }
+  // });
+});
 
 router.get("/test", (req, res) => {
   console.log("test");
@@ -25,28 +67,70 @@ router.get("/register", (req, res) => {
 
 //upload file get
 router.get("/upload", (req, res) => {
-  res.render("upload");
+  // Set Amazon Uploading Engine
+  const s3 = new AWS.S3({
+    accessKeyId: "AKIASPLFO6OWDBGJA2BS",
+    secretAccessKey: "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",
+    region: "ap-south-1",
+  });
+
+  s3.listBuckets((err, data) => {
+    if (err) {
+      console.log("Error", err);
+    } else {
+      // console.log("Success", data.Buckets);
+      res.render("upload", { buckets: data.Buckets });
+    }
+  });
 });
 
 //upload a file post
 router.post("/uploaddata", uploads3.array("img", 10), (req, res) => {
-  console.log(req.file);
+  // console.log(req.session.passport);
+  let location = [];
+  req.files.map((data) => location.push(data.location));
+  console.log(location);
+  const id = req.session.passport.user;
+
+  // console.log(info);
+
+  Info.find({ userid: id._id }).then((info) => {
+    // console.log(info.length);
+    const info1 = new Info({
+      userid: id._id,
+      dataUrl: location[location.length - 1],
+    });
+    if (info.length == 0) {
+      info1.save().then((infor) => {
+        console.log(infor);
+      });
+    } else {
+      Info.findOneAndUpdate(
+        { userid: id._id },
+        { $push: { dataUrl: location[0] } }
+      ).exec((err, result) => {
+        if (err) console.error(err);
+        console.log(result);
+      });
+    }
+  });
   res.redirect("/dashboard");
 });
 
 //Register Handler
 router.post("/register", (req, res) => {
-  const { name, email, password, password2 } = req.body;
+  const { name, email, password } = req.body;
   let errors = [];
 
   //Check required fields
-  if (!name || !email || !password || !password2) {
-    errors.push({ msg: "Please Fill all the fields" });
+  if (!name) {
+    errors.push({ msg: "Please Fill the Name Field" });
   }
-
-  //Check password match
-  if (password2 !== password) {
-    errors.push({ msg: "Password do not match" });
+  if (!email) {
+    errors.push({ msg: "Please Fill the Email Field" });
+  }
+  if (!password) {
+    errors.push({ msg: "Please Fill the Password Field" });
   }
 
   //Check pass length
@@ -55,7 +139,7 @@ router.post("/register", (req, res) => {
   }
 
   if (errors.length > 0) {
-    res.render("register", { errors, name, email, password, password2 });
+    res.render("register", { errors, name, email, password });
   } else {
     const newUser = new User({
       name,
@@ -77,14 +161,6 @@ router.post("/register", (req, res) => {
           .catch((err) => console.log(err));
       });
     });
-    //Save the User
-    // newUser.save((err,data)=>{
-    //     if(err) throw err;
-    //     else{
-    //     console.log(newUser);
-    //     res.redirect('/users/login');
-    //     }
-    // })
   }
 });
 
@@ -101,6 +177,8 @@ const checkAuthenicated = function (req, res, next) {
 };
 //Dashboard Handler
 router.get("/dashboard", checkAuthenicated, (req, res) => {
+  // console.log(req.session.passport.user);
+
   res.render("dashboard");
 });
 
@@ -117,11 +195,17 @@ router.post("/login", (req, res, next) => {
   if (errors.length > 0) {
     res.render("login", { errors, email, password });
   } else {
-    passport.authenticate("local", {
-      successRedirect: "/dashboard",
-      failureRedirect: "/",
-      failureFlash: true,
-    })(req, res, next);
+    if (email == "admin@gmail.com") {
+      console.log("TEST");
+      // req.session.passport.user = email;
+      res.redirect("/admin");
+    } else {
+      passport.authenticate("local", {
+        successRedirect: "/dashboard",
+        failureRedirect: "/",
+        failureFlash: true,
+      })(req, res, next);
+    }
   }
 });
 
@@ -130,6 +214,74 @@ router.get("/logout", (req, res) => {
   req.logout();
   req.flash("success_msg", "You are logged Out");
   res.redirect("/");
+});
+
+router.get("/admin", (req, res) => {
+  res.render("admindashboard");
+});
+
+router.get("/adduser", checkAuthenicated, (req, res) => {
+  res.render("register");
+});
+
+router.get("/showalluser", async (req, res) => {
+  try {
+    const users = await User.find().lean();
+    console.log(users);
+    let info = [];
+    users.map(
+      (user) =>
+        user.email != "admin@gmail.com" &&
+        info.push({ id: user._id, name: user.name, email: user.email })
+    );
+    console.log(info);
+    res.render("showalluser", { users: info });
+    // res.render('dashboard',{
+    //     name:req.user.firstName+" "+req.user.lastName,
+    //     stories
+    // })
+    // res.render("showuser", { users });
+  } catch (err) {
+    console.error(err);
+  }
+});
+
+router.get("/showallfiles", checkAuthenicated, async (req, res) => {
+  try {
+    const info = await Info.find({ userid: req.session.passport.user }).lean();
+    // console.log(info[0].dataUrl);
+    let result = [];
+    info[0].dataUrl.map((data) =>
+      result.push({ url: data, name: data.split("/").pop() })
+    );
+    console.log(result);
+    // res.render('dashboard',{
+    //     name:req.user.firstName+" "+req.user.lastName,
+    //     stories
+    // })
+    res.render("showAllFiles", { users: result });
+  } catch (err) {
+    console.error(err);
+  }
+});
+
+router.get("/user/:id", async (req, res) => {
+  try {
+    const info = await Info.find({ userid: req.params.id }).lean();
+    // console.log(info[0].dataUrl);
+    let result = [];
+    info[0].dataUrl.map((data) =>
+      result.push({ url: data, name: data.split("/").pop() })
+    );
+    console.log(result);
+    // res.render('dashboard',{
+    //     name:req.user.firstName+" "+req.user.lastName,
+    //     stories
+    // })
+    res.render("showAllFiles", { users: result });
+  } catch (err) {
+    console.error(err);
+  }
 });
 
 module.exports = router;

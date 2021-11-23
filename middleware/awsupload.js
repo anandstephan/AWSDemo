@@ -16,10 +16,21 @@ const s3 = new AWS.S3({
 const uploads3 = multer({
   storage: multerS3({
     s3: s3,
-    bucket: "anandbro",
+    bucket: function (req, file, cb) {
+      // console.log(
+      //   req.body.bucket +
+      //     "/" +
+      //     req.body.folder.substring(0, req.body.folder.length - 1)
+      // );
+      cb(
+        null,
+        req.body.bucket +
+          "/" +
+          req.body.folder.substring(0, req.body.folder.length - 1)
+      );
+    },
     acl: "public-read",
     key: (req, file, cb) => {
-      console.log(req);
       cb(null, Date.now() + "-" + file.originalname);
     },
   }),
