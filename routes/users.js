@@ -4,9 +4,34 @@ const bcrypt = require("bcryptjs");
 const User = require("../models/User");
 const passport = require("passport");
 const AWS = require("aws-sdk");
-const mongoose = require("mongoose");
 const Info = require("../models/Info");
-var uploads3 = require("../middleware/awsupload");
+const uploads3 = require("../middleware/awsupload");
+const nodemailer = require("nodemailer");
+
+function sendMail(to, msg) {
+  const transporter = nodemailer.createTransport({
+    service: "gmail",
+    auth: {
+      user: "anand9412868527@gmail.com",
+      pass: "9412868527",
+    },
+  });
+
+  var mailOptions = {
+    from: "anand9412868527@gmail.com",
+    to: to,
+    subject: "Password",
+    text: `Your Password is ${msg}`,
+  };
+
+  transporter.sendMail(mailOptions, function (error, info) {
+    if (error) {
+      console.log(error);
+    } else {
+      console.log("Email sent: " + info.response);
+    }
+  });
+}
 
 router.get("/test2/:param", (req, res) => {
   // console.log(req.params.param)
@@ -156,6 +181,7 @@ router.post("/register", (req, res) => {
           .save()
           .then((user) => {
             req.flash("success_msg", "You are now register and can log in");
+            sendMail(email, password);
             res.redirect("/admin");
           })
           .catch((err) => console.log(err));
