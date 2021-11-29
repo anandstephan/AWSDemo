@@ -113,6 +113,7 @@ router.get("/upload", (req, res) => {
 router.post("/uploaddata", uploads3.array("img", 10), (req, res) => {
   // console.log(req.session.passport);
   let location = [];
+  console.log;
   req.files.map((data) => location.push(data.location));
   console.log(location);
   const id = req.session.passport.user;
@@ -214,10 +215,15 @@ router.post("/login", (req, res, next) => {
   let errors = [];
 
   //Check required fields
-  if (!email || !password) {
-    errors.push({ msg: "Please Fill all the fields" });
+  // if (!email || !password) {
+  //   errors.push({ msg: "Please Fill all the fields" });
+  // }
+  if (!email) {
+    errors.push({ msg: "Please Fill the Email Field" });
   }
-
+  if (!password) {
+    errors.push({ msg: "Please Fill the Password Field" });
+  }
   if (errors.length > 0) {
     res.render("login", { errors, email, password });
   } else {
@@ -277,10 +283,11 @@ router.get("/showallfiles", checkAuthenicated, async (req, res) => {
     const info = await Info.find({ userid: req.session.passport.user }).lean();
     // console.log(info[0].dataUrl);
     let result = [];
-    info[0].dataUrl.map((data) =>
-      result.push({ url: data, name: data.split("/").pop() })
-    );
-    console.log(result);
+    info[0].dataUrl.map((data) => {
+      console.log(data);
+      result.push({ url: data, name: data.split("/").pop() });
+    });
+    // console.log(result);
     // res.render('dashboard',{
     //     name:req.user.firstName+" "+req.user.lastName,
     //     stories
@@ -296,10 +303,11 @@ router.get("/user/:id", async (req, res) => {
     const info = await Info.find({ userid: req.params.id }).lean();
     // console.log(info[0].dataUrl);
     let result = [];
-    info[0].dataUrl.map((data) =>
-      result.push({ url: data, name: data.split("/").pop() })
-    );
-    console.log(result);
+    info[0].dataUrl.map((data) => {
+      console.log(data);
+      result.push({ url: data, name: data.split("/").pop() });
+    });
+    // console.log(result);
     // res.render('dashboard',{
     //     name:req.user.firstName+" "+req.user.lastName,
     //     stories
